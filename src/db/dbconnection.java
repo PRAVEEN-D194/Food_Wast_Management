@@ -11,7 +11,7 @@ import static java.lang.Class.forName;
 public class dbconnection {
 
 
-    private static Connection getConnection() {
+    public static Connection getConnection() {
         Connection con = null;
         try{
             Properties prop = new Properties();
