@@ -10,7 +10,10 @@ import java.util.Scanner;
 
 public class Main {
     static ArrayList<Donor> Donorlist = new ArrayList<>();
+    static ArrayList<Receiver> Receiverlist = new ArrayList<>();
     static ArrayList<Food> Foodlist = new ArrayList<>();
+    static int receiver_id;
+
     static Connection con =null;
     public static void main(String[] args) {
         Scanner choice = new Scanner(System.in);
@@ -44,7 +47,7 @@ public class Main {
                     }
                     break;
                 case 2:
-                    user();
+                    loginpage();
                     break;
                 case 3:
                     System.out.println("exit");
@@ -53,34 +56,6 @@ public class Main {
                     System.out.println("Invalid Choice");
             }
         }while (ch!=3);
-//            switch (ch){
-//                case 1:
-//                    addFood();
-//                    break;
-//                case 2:
-//                    addDonor();
-//                    break;
-//                case 3:
-//                    viewFood();
-//                    break;
-//                case 4:
-//                    allocatefood();
-//                    break;
-//                case 5:
-//                    System.out.println("Manage Expired Food");
-//                    break;
-//                case 6:
-//                    viewDonor();
-//                    break;
-//                case 7:
-//                    System.out.println("Exit");
-//                    break;
-//                default:
-//                    System.out.println("Enter valid Choice");
-//                    break;
-//
-//            }
-//        }while (ch != 7);
     }
 
     public static void admin(){
@@ -95,6 +70,7 @@ public class Main {
             System.out.println("3. Allocate Food");
             System.out.println("4. Manage Expired Food");
             System.out.println("5. logout");
+            System.out.println("Enter your choice:");
 
             c = scanner.nextInt();
 
@@ -121,6 +97,99 @@ public class Main {
         }while(c!=5);
     }
 
+
+    public static void loginpage(){
+
+
+            Scanner scanner = new Scanner(System.in);
+            int c;
+            do {
+
+                System.out.println("1. login");
+                System.out.println("2. signup");
+                System.out.println("3. exit");
+                System.out.println("Enter Your option");
+
+                c = scanner.nextInt();
+                scanner.nextLine();
+                try {
+
+                    if (c == 1) {
+                    System.out.print("Enter Email: ");
+                    String email = scanner.nextLine();
+
+                    System.out.print("Enter Password: ");
+                    String password = scanner.nextLine();
+                    String sql = "SELECT * FROM receiver WHERE email=? AND password=?";
+                        PreparedStatement ps = con.prepareStatement(
+                                sql
+                        );
+                    ps.setString(1, email);
+                    ps.setString(2, password);
+
+                    ResultSet rs = ps.executeQuery();
+
+                    if (rs.next()) {
+                        System.out.println("Login Successful");
+                        receiver_id = rs.getInt("receiver_id");
+
+                        System.out.println("Receiver ID = " + receiver_id);
+                        user();
+                    } else {
+                        System.out.println("Invalid Email or Password");
+                    }
+                }
+                if (c == 2) {
+                    Scanner sc = new Scanner(System.in);
+
+                    System.out.print("Enter Name: ");
+                    String name = sc.nextLine();
+
+                    System.out.print("Enter Email: ");
+                    String email = sc.nextLine();
+
+                    System.out.print("Enter Phone Number: ");
+                    String phone = sc.nextLine();
+
+                    System.out.print("Enter Address: ");
+                    String address = sc.nextLine();
+
+                    System.out.print("Enter Password: ");
+                    String password = sc.nextLine();
+
+                    String sql = "INSERT INTO receiver(name, email, phone, password, location) VALUES(?, ?, ?, ?,  ?)";
+
+                    PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+
+                    ps.setString(1, name);
+                    ps.setString(2, email);
+                    ps.setString(3, phone);
+                    ps.setString(4, password);
+                    ps.setString(5, address);
+
+                    int rows = ps.executeUpdate();
+
+                    if (rows > 0) {
+                        System.out.println("Registration Successful!");
+                        ResultSet rsp = ps.executeQuery("SELECT LAST_INSERT_ID()");
+                        if (rsp.next()) {
+                           receiver_id =  rsp.getInt(1);
+                        }
+                        user();
+                    } else {
+                        System.out.println("Registration Failed!");
+                    }
+                }
+                if (c == 3) {
+                    System.out.println("exit");
+                }
+                }catch (Exception e){
+                    System.out.println("login page failed");
+                }
+            } while (c != 3);
+
+
+    }
 
     public static void user(){
         Scanner scanner = new Scanner(System.in);
@@ -158,6 +227,55 @@ public class Main {
         }while(c!=4);
 
     }
+
+
+    public static void allocatefood() {
+        try {
+            String query = "select * from food where allocated = false and expirydate > NOW();";
+            PreparedStatement ps = con.prepareStatement(query);
+            ResultSet rs = ps.executeQuery();
+
+            Scanner s = new Scanner(System.in);
+            int i = 0;
+
+            while (rs.next()) {
+                System.out.println(
+                        rs.getInt("food_id") + " --> " +
+                                rs.getString("foodname") + " " +
+                                rs.getInt("quantity")
+                );
+                i++;
+            }
+
+            if (i != 0) {
+
+                System.out.println("Enter Food ID:");
+                int foodid = s.nextInt();
+                // Store these details
+                String insert = "INSERT INTO food_allocation(food_id, receiver_id) VALUES(?, ?)";
+                PreparedStatement p1 = con.prepareStatement(insert);
+                p1.setInt(1, foodid);
+                p1.setInt(2, receiver_id);
+                p1.executeUpdate();
+
+                // Mark food as allocated
+                String update = "UPDATE food SET allocated = true WHERE food_id = ?";
+                PreparedStatement p2 = con.prepareStatement(update);
+                p2.setInt(1, foodid);
+
+                if (p2.executeUpdate() > 0) {
+                    System.out.println("Food allocated successfully.");
+                }
+
+            } else {
+                System.out.println("Food Not Available");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void addDonor(){
         try {
 
@@ -247,48 +365,6 @@ public class Main {
                         rs.getBoolean("allocated")
                 );
             }
-        }catch (Exception e){
-            System.out.println("view food failed");
-        }
-    }
-
-    public static void allocatefood(){
-        try {
-            String query = "select * from food where allocated = false and expirydate > NOW();";
-            PreparedStatement ps = con.prepareStatement(query);
-            ResultSet rs = ps.executeQuery();
-            int foodid=0;
-            Scanner s = new Scanner(System.in);
-            int i=0;
-            while (rs.next()) {
-                System.out.println(
-                        rs.getInt("food_id") + " -->  " +
-                        rs.getString("foodname") + " " +
-                        rs.getInt("quantity") + " " +
-                        rs.getString("expirydate") + " " +
-                        rs.getBoolean("allocated")
-                );
-                i++;
-            }
-            if(i!=0) {
-                System.out.println("enter what You have");
-                foodid = s.nextInt();
-
-                String q = "update food set allocated = true where food_id = ?";
-
-                PreparedStatement p = con.prepareStatement(q);
-                p.setInt(1, foodid);
-                int row = p.executeUpdate();
-
-                if (row > 0) {
-                    System.out.println("Food allocation updated successfully");
-                } else {
-                    System.out.println("Food allocation updated failed Retry");
-                }
-            }else{
-                System.out.println("Food Not Avilable For Eatable");
-            }
-
         }catch (Exception e){
             System.out.println("view food failed");
         }
