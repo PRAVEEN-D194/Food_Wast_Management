@@ -13,6 +13,7 @@ public class Main {
     static ArrayList<Receiver> Receiverlist = new ArrayList<>();
     static ArrayList<Food> Foodlist = new ArrayList<>();
     static int receiver_id;
+    static int donor_id;
 
     static Connection con =null;
     public static void main(String[] args) {
@@ -29,8 +30,9 @@ public class Main {
 
             System.out.println("Enter Your Roll");
             System.out.println("1.Admin");
-            System.out.println("2.User");
-            System.out.println("3.Exit");
+            System.out.println("2.Doner");
+            System.out.println("3.Receiver");
+            System.out.println("4.Exit");
             System.out.println(" Enter Your Choice:");
 
             ch = choice.nextInt();
@@ -47,15 +49,19 @@ public class Main {
                     }
                     break;
                 case 2:
-                    loginpage();
+                    loginDoner();
                     break;
+
                 case 3:
+                    loginReceiver();
+                    break;
+                case 4:
                     System.out.println("exit");
                     break;
                 default:
                     System.out.println("Invalid Choice");
             }
-        }while (ch!=3);
+        }while (ch!=4);
     }
 
     public static void admin(){
@@ -98,7 +104,94 @@ public class Main {
     }
 
 
-    public static void loginpage(){
+    public static void loginDoner(){
+        Scanner scanner = new Scanner(System.in);
+        int c;
+        do {
+
+            System.out.println("1. login");
+            System.out.println("2. signup");
+            System.out.println("3. exit");
+            System.out.println("Enter Your option");
+
+            c = scanner.nextInt();
+            scanner.nextLine();
+            try {
+
+                if (c == 1) {
+                    System.out.print("Enter Email: ");
+                    String email = scanner.nextLine();
+
+                    System.out.print("Enter Password: ");
+                    String password = scanner.nextLine();
+                    String sql = "SELECT * FROM Donor WHERE email=? AND password=?";
+                    PreparedStatement ps = con.prepareStatement(
+                            sql
+                    );
+                    ps.setString(1, email);
+                    ps.setString(2, password);
+
+                    ResultSet rs = ps.executeQuery();
+
+                    if (rs.next()) {
+                        System.out.println("Login Successful");
+                        donor_id = rs.getInt("donor_id");
+                        donorlist();
+                    } else {
+                        System.out.println("Invalid Email or Password");
+                    }
+                }
+                if (c == 2) {
+                    Scanner sc = new Scanner(System.in);
+
+                    System.out.print("Enter Name: ");
+                    String name = sc.nextLine();
+
+                    System.out.print("Enter Email: ");
+                    String email = sc.nextLine();
+
+                    System.out.print("Enter Phone Number: ");
+                    String phone = sc.nextLine();
+
+                    System.out.print("Enter Address: ");
+                    String address = sc.nextLine();
+
+                    System.out.print("Enter Password: ");
+                    String password = sc.nextLine();
+
+                    String sql = "INSERT INTO Donor(name, email, phone, password, address) VALUES(?, ?, ?, ?,  ?)";
+
+                    PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+
+                    ps.setString(1, name);
+                    ps.setString(2, email);
+                    ps.setString(3, phone);
+                    ps.setString(4, password);
+                    ps.setString(5, address);
+
+                    int rows = ps.executeUpdate();
+
+                    if (rows > 0) {
+                        System.out.println("Registration Successful!");
+                        ResultSet rsp = ps.executeQuery("SELECT LAST_INSERT_ID()");
+                        if (rsp.next()) {
+                            donor_id =  rsp.getInt(1);
+                        }
+                        donorlist();
+                    } else {
+                        System.out.println("Registration Failed!");
+                    }
+                }
+                if (c == 3) {
+                    System.out.println("exit");
+                }
+            }catch (Exception e){
+                System.out.println("login page failed");
+            }
+        } while (c != 3);
+
+    }
+    public static void loginReceiver(){
 
 
             Scanner scanner = new Scanner(System.in);
@@ -134,7 +227,7 @@ public class Main {
                         receiver_id = rs.getInt("receiver_id");
 
                         System.out.println("Receiver ID = " + receiver_id);
-                        user();
+                        receiverlist();
                     } else {
                         System.out.println("Invalid Email or Password");
                     }
@@ -175,7 +268,7 @@ public class Main {
                         if (rsp.next()) {
                            receiver_id =  rsp.getInt(1);
                         }
-                        user();
+                        receiverlist();
                     } else {
                         System.out.println("Registration Failed!");
                     }
@@ -190,20 +283,16 @@ public class Main {
 
 
     }
-
-    public static void user(){
+    public static void donorlist(){
         Scanner scanner = new Scanner(System.in);
         int c;
-//        System.out.println("Your Have account login else signup");
-//        System.out.println("1. Login");
-//        System.out.println("2. Signup");
-//        c=scanner.nextInt();
+//
         do{
-            System.out.println("Please Enter Your Choice");
+
             System.out.println("1. Add Food");
             System.out.println("2. View Avilable Food");
-            System.out.println("3. Select Food");
-            System.out.println("4. LogOut");
+            System.out.println("3. LogOut");
+            System.out.println("Please Enter Your Choice");
 
             c = scanner.nextInt();
 
@@ -215,16 +304,42 @@ public class Main {
                     viewFood();
                     break;
                 case 3:
-                    allocatefood();
-                    break;
-                case 4:
                     System.out.println("Exit");
                     break;
                 default:
                     System.out.println("Enter valid Choice");
                     break;
             }
-        }while(c!=4);
+        }while(c!=3);
+    }
+    public static void receiverlist(){
+        Scanner scanner = new Scanner(System.in);
+        int c;
+        do{
+
+            System.out.println("1. View Avilable Food");
+            System.out.println("2. Select Food");
+            System.out.println("3. LogOut");
+            System.out.println("Please Enter Your Choice");
+
+            c = scanner.nextInt();
+
+            switch (c){
+
+                case 1:
+                    viewFood();
+                    break;
+                case 2:
+                    allocatefood();
+                    break;
+                case 3:
+                    System.out.println("Exit");
+                    break;
+                default:
+                    System.out.println("Enter valid Choice");
+                    break;
+            }
+        }while(c!=3);
 
     }
 
@@ -297,8 +412,8 @@ public class Main {
             ps.executeUpdate();
             System.out.println("Donor added successfully");
 
-            Donor d = new Donor(Donorlist.size()+1, name,address, phoneNo);
-            Donorlist.add(d);
+//            Donor d = new Donor(Donorlist.size()+1, name,address, phoneNo);
+//            Donorlist.add(d);
         }catch (Exception e){
             System.out.println("donor insert failed");
         }
@@ -317,12 +432,13 @@ public class Main {
 
 
             String query =
-                    "INSERT INTO food( foodname, quantity, expirydate, allocated) VALUES ( ?, ?, ?, ?)";
+                    "INSERT INTO food( foodname, quantity, expirydate, allocated, donor_id) VALUES ( ?, ?, ?, ?, ?)";
             PreparedStatement ps = con.prepareStatement(query);
             ps.setString(1, foodname);
             ps.setInt(2,  Integer.parseInt(quantity));
             ps.setString(3, expiry);
             ps.setBoolean(4, false);
+            ps.setInt(5, donor_id);
             ps.executeUpdate();
             System.out.println("food added successfully");
 //            Food f = new Food(Foodlist.size() + 1, foodname, Integer.parseInt(quantity), expiry);
